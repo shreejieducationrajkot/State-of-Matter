@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matter Master: Grade 3 Science</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'lab-bg': '#0f172a', // Slate 900
+              'lab-card': '#1e293b', // Slate 800
+              'kid-blue': '#38bdf8',
+              'kid-green': '#4ade80',
+              'kid-orange': '#fb923c',
+              'kid-yellow': '#facc15',
+              'liquid-water': '#22d3ee', // Cyan 400
+              'liquid-milk': '#f8fafc', // Slate 50
+              'liquid-oil': '#eab308', // Yellow 500
+            },
+            fontFamily: {
+              sans: ['Comic Sans MS', 'Chalkboard SE', 'sans-serif'],
+            },
+            animation: {
+              'float': 'float 3s ease-in-out infinite',
+              'smoke': 'smoke 4s ease-out forwards',
+              'pour': 'pour 1s linear',
+              'pulse-glow': 'pulse-glow 2s infinite',
+              'wave': 'wave 1.5s linear infinite',
+              'stream-flow': 'stream-flow 1s ease-out forwards',
+              'bubble-rise': 'bubble-rise 3s ease-in infinite',
+              'chaotic-move': 'chaotic-move 5s linear infinite',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              smoke: {
+                '0%': { opacity: '0', transform: 'scale(0.5) translateY(0)' },
+                '100%': { opacity: '0.6', transform: 'scale(2) translateY(-40px)' },
+              },
+              pour: {
+                '0%': { height: '0%' },
+                '50%': { height: '100%' },
+                '100%': { height: '0%', top: '100%' }
+              },
+              'pulse-glow': {
+                '0%, 100%': { boxShadow: '0 0 10px #38bdf8' },
+                '50%': { boxShadow: '0 0 20px #38bdf8' }
+              },
+              'wave': {
+                 '0%': { transform: 'translateX(0)' },
+                 '100%': { transform: 'translateX(-50%)' }
+              },
+              'stream-flow': {
+                '0%': { height: '0', opacity: 0 },
+                '20%': { height: '100%', opacity: 0.8 },
+                '80%': { height: '100%', opacity: 0.8 },
+                '100%': { height: '0', bottom: 0, opacity: 0 } 
+              },
+              'bubble-rise': {
+                '0%': { bottom: '0%', opacity: '0', transform: 'translateX(0) scale(0.5)' },
+                '30%': { opacity: '0.6' },
+                '100%': { bottom: '95%', opacity: '0', transform: 'translateX(4px) scale(1.1)' }
+              },
+              'chaotic-move': {
+                '0%': { transform: 'translate(0, 0)' },
+                '20%': { transform: 'translate(30px, -30px)' },
+                '40%': { transform: 'translate(-20px, 20px)' },
+                '60%': { transform: 'translate(20px, 30px)' },
+                '80%': { transform: 'translate(-30px, -10px)' },
+                '100%': { transform: 'translate(0, 0)' },
+              }
+            }
+          },
+        },
+      };
+    </script>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
+  </head>
+  <body class="bg-lab-bg text-white">
+    <div id="root"></div>
+  </body>
+</html>
