@@ -275,12 +275,12 @@ export const SolidStation: React.FC = () => {
           75% { transform: translate(1px, -1px); }
         }
         .animate-particle-vibrate {
-          animation: particle-vibrate 0.2s linear infinite;
+          animation: particle-vibrate 0.3s linear infinite;
         }
         @keyframes move-in-arc {
           0% { transform: translate(0, 0) scale(1); }
           50% { transform: translate(100px, -30px) scale(0.9); }
-          100% { transform: translate(140px, 20px) scale(1); }
+          100% { transform: translate(140px, 30px) scale(1); }
         }
         .animate-move-in-arc {
           animation: move-in-arc 3s ease-in-out infinite;
@@ -343,7 +343,7 @@ export const SolidStation: React.FC = () => {
                         <path d="M 115 45 L 125 50 L 115 55" fill="#64748b" />
                         
                         {/* Container */}
-                        <path d="M 150 80 Q 185 30 220 80" stroke="#94a3b8" strokeWidth="3" fill="rgba(148, 163, 184, 0.1)" />
+                        <path d="M 150 70 L 220 70 Q 185 100 150 70 Z" stroke="#94a3b8" strokeWidth="3" fill="rgba(148, 163, 184, 0.1)" />
 
                         {/* Animated Block */}
                         <rect x="25" y="40" width="30" height="30" rx="3" fill="#fb923c" stroke="#9a3412" strokeWidth="1.5" className="animate-move-in-arc" style={{ filter: 'url(#glow)' }} />
@@ -366,7 +366,11 @@ export const SolidStation: React.FC = () => {
                       {/* 3x3 Grid of particles */}
                       <div className="grid grid-cols-3 gap-1">
                         {Array.from({length: 9}).map((_, i) => (
-                          <div key={i} className="w-4 h-4 bg-kid-orange rounded-full shadow-sm animate-particle-vibrate"></div>
+                          <div 
+                            key={i} 
+                            className="w-4 h-4 bg-kid-orange rounded-full shadow-sm animate-particle-vibrate"
+                            style={{ animationDelay: `${i * 0.05}s` }}
+                          ></div>
                         ))}
                       </div>
                     </div>
@@ -522,8 +526,8 @@ export const SolidStation: React.FC = () => {
                  </div>
 
                  {/* Box Front */}
-                 <div className="absolute bottom-0 w-48 h-24 bg-[#795548] border-4 border-[#5d4037] border-t-0 z-20 pointer-events-none flex items-center justify-center">
-                    <span className="text-[#3e2723]/30 font-black text-2xl rotate-12 mix-blend-multiply">BOX</span>
+                 <div className="absolute bottom-0 w-48 h-12 bg-[#795548] border-4 border-[#5d4037] border-t-0 z-20 pointer-events-none flex items-end justify-center pb-1">
+                    <span className="text-[#3e2723]/30 font-black text-xl rotate-12 mix-blend-multiply">BOX</span>
                  </div>
                  <div className="absolute bottom-[-10px] w-48 h-10 bg-[#6d4c41] transform -skew-x-12 origin-top-left z-20 shadow-xl"></div>
                  

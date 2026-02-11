@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wind, Info, Check, RotateCcw, Flame, Snowflake, Microscope, ArrowUp, ArrowDown } from 'lucide-react';
+import { Wind, Info, Check, RotateCcw, Flame, Snowflake, Microscope, ArrowUp, ArrowDown, Users, User } from 'lucide-react';
 
 type GasType = 'AIR' | 'HELIUM' | 'STEAM';
 
@@ -29,7 +29,8 @@ const GAS_CONFIG = {
     balloonClass: 'bg-blue-500',
     balloonBehavior: 'translate-y-2', // Hangs down (heavy)
     particleClass: 'bg-slate-400 shadow-[0_0_5px_rgba(148,163,184,0.8)]',
-    baseSpeed: 10,
+    baseSpeed: 6,
+    animationName: 'chaotic-move-air',
     sourceType: 'INCENSE',
     actionLabel: 'Light Incense',
     fillLabel: 'Pump Air'
@@ -43,7 +44,8 @@ const GAS_CONFIG = {
     balloonClass: 'bg-pink-500',
     balloonBehavior: '-translate-y-4 animate-float', // Pulls up (light)
     particleClass: 'bg-pink-300 shadow-[0_0_5px_rgba(249,168,212,0.8)]',
-    baseSpeed: 5,
+    baseSpeed: 3,
+    animationName: 'chaotic-move-helium',
     sourceType: 'TANK',
     actionLabel: 'Open Valve',
     fillLabel: 'Fill Helium'
@@ -57,7 +59,8 @@ const GAS_CONFIG = {
     balloonClass: 'bg-gray-300',
     balloonBehavior: '-translate-y-1 animate-pulse', // Rises slightly
     particleClass: 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]',
-    baseSpeed: 1.5,
+    baseSpeed: 10,
+    animationName: 'chaotic-move-steam',
     sourceType: 'KETTLE',
     actionLabel: 'Boil Water',
     fillLabel: 'Pump Steam'
@@ -71,6 +74,7 @@ export const GasStation: React.FC = () => {
   const [isFlowing, setIsFlowing] = useState(false);
   const [showObservation, setShowObservation] = useState(false);
   const [temperature, setTemperature] = useState(1);
+  const [particleCount, setParticleCount] = useState(60);
   const [showMicroscope, setShowMicroscope] = useState(false);
 
   const currentGas = GAS_CONFIG[selectedGas];
@@ -82,6 +86,7 @@ export const GasStation: React.FC = () => {
     setIsFlowing(false);
     setShowObservation(false);
     setTemperature(1);
+    setParticleCount(60);
   }, [selectedGas]);
 
   const handlePump = () => {
@@ -93,7 +98,7 @@ export const GasStation: React.FC = () => {
     setShowObservation(false);
     
     // 1. Initialize particles at the source (bottom center)
-    const count = 60;
+    const count = particleCount;
     const newParticles: Particle[] = Array.from({ length: count }, (_, i) => ({
       id: i,
       left: 50, // Start center
@@ -194,12 +199,15 @@ export const GasStation: React.FC = () => {
                         {Array.from({length: 5}).map((_, i) => (
                             <div 
                                 key={i} 
-                                className="absolute w-3 h-3 bg-purple-400 rounded-full shadow-sm animate-chaotic-move"
+                                className="absolute w-3 h-3 bg-purple-400 rounded-full shadow-sm"
                                 style={{
                                     left: '40%',
                                     top: '40%',
+                                    animationName: 'chaotic-move-air',
                                     animationDuration: `${1 + Math.random()}s`,
-                                    animationDelay: `${Math.random()}s`
+                                    animationDelay: `${Math.random()}s`,
+                                    animationTimingFunction: 'ease-in-out',
+                                    animationIterationCount: 'infinite',
                                 }}
                             ></div>
                         ))}
@@ -324,7 +332,7 @@ export const GasStation: React.FC = () => {
              {particles.map((p) => (
                <div 
                   key={p.id}
-                  className={`absolute rounded-full animate-chaotic-move mix-blend-screen ${currentGas.particleClass}`}
+                  className={`absolute rounded-full mix-blend-screen ${currentGas.particleClass}`}
                   style={{
                     left: `${p.left}%`,
                     top: `${p.top}%`,
@@ -335,7 +343,10 @@ export const GasStation: React.FC = () => {
                     transition: 'left 2s ease-out, top 2s ease-out',
                     // Use CSS animation for the continuous "wiggling"
                     // Adjust duration based on temperature: Higher temp = faster speed = lower duration
+                    animationName: currentGas.animationName,
                     animationDuration: `${p.duration / temperature}s`,
+                    animationTimingFunction: 'ease-in-out',
+                    animationIterationCount: 'infinite',
                     animationDelay: `${p.delay}s`
                   }}
                ></div>
@@ -355,6 +366,28 @@ export const GasStation: React.FC = () => {
           
           {/* Controls */}
           <div className="flex flex-col gap-4 mt-6 w-full">
+            {/* Density Slider */}
+            <div className={`flex flex-col gap-2 bg-slate-700/40 p-3 rounded-xl border border-slate-600 transition-opacity ${isFlowing ? 'opacity-50' : ''}`}>
+                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-400">
+                    <span>Density</span>
+                    <span>{particleCount < 40 ? 'Low' : particleCount > 80 ? 'High' : 'Medium'} ({particleCount} particles)</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <User className="text-slate-400" size={18} />
+                    <input 
+                        type="range" 
+                        min="20" 
+                        max="100" 
+                        step="10" 
+                        value={particleCount}
+                        onChange={(e) => setParticleCount(parseInt(e.target.value, 10))}
+                        disabled={isFlowing}
+                        className="flex-1 h-2 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-lg appearance-none cursor-pointer accent-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <Users className="text-slate-400" size={18} />
+                </div>
+            </div>
+
             {/* Temperature Slider */}
             {isFlowing && (
                 <div className="flex flex-col gap-2 bg-slate-700/40 p-3 rounded-xl border border-slate-600 animate-fadeIn">
@@ -380,7 +413,7 @@ export const GasStation: React.FC = () => {
 
             <div className="flex gap-2">
                  <button
-                    onClick={() => { setIsFlowing(false); setParticles([]); setShowObservation(false); setTemperature(1); }}
+                    onClick={() => { setIsFlowing(false); setParticles([]); setShowObservation(false); setTemperature(1); setParticleCount(60); }}
                     className="p-3 rounded-full bg-slate-700 text-slate-400 hover:text-white hover:bg-slate-600"
                     title="Clear Room"
                  >

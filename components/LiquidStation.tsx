@@ -83,6 +83,7 @@ export const LiquidStation: React.FC = () => {
   const [pouredContainer, setPouredContainer] = useState<'NONE' | 'TALL' | 'WIDE'>('NONE');
   const [targetContainer, setTargetContainer] = useState<'NONE' | 'TALL' | 'WIDE'>('NONE');
   const [isPouring, setIsPouring] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false); // Master lock for any animation
   const [showMicroscope, setShowMicroscope] = useState(false);
   
   // Siphon State
@@ -94,29 +95,43 @@ export const LiquidStation: React.FC = () => {
   const currentLiquid = LIQUID_CONFIG[selectedLiquid];
 
   const handlePour = (target: 'TALL' | 'WIDE') => {
-    if (isPouring || pouredContainer === target) return;
-    
-    // 1. Setup Animation State
-    // Immediately "refill" the flask (visually) by emptying the current container
-    // and setting target. This prepares the "Source".
-    setPouredContainer('NONE'); 
-    setTargetContainer(target); 
-    setIsPouring(true); 
-    
-    // 2. Sequence:
-    // 0ms: Pitcher moves & tilts (Flask is Full)
-    // 400ms: Stream starts flowing (CSS animation delay)
-    // 600ms: Stream hits bottom -> Start Filling Container & Emptying Flask
-    setTimeout(() => {
-      setPouredContainer(target);
-    }, 600);
+    // If we are animating, or clicking the already-full container, do nothing.
+    if (isAnimating || pouredContainer === target) return;
 
-    // 1600ms: Stream finishes. End state.
-    setTimeout(() => {
-      setIsPouring(false);
-      setTargetContainer('NONE'); 
-    }, 1800); 
+    setIsAnimating(true);
+    const isSwitching = pouredContainer !== 'NONE';
+
+    const performPour = () => {
+        // 1. Move flask and start tilting
+        setTargetContainer(target);
+        setIsPouring(true);
+
+        // 2. Stream starts, then container starts filling after 600ms
+        setTimeout(() => {
+            setPouredContainer(target);
+        }, 600);
+
+        // 3. Animation ends, clean up states
+        setTimeout(() => {
+            setIsPouring(false);
+            setTargetContainer('NONE');
+            setIsAnimating(false); // Unlock for next action
+        }, 1800);
+    };
+
+    if (isSwitching) {
+        // Step 1: Empty the current container. The flask is already in idle position.
+        // This triggers a 1s CSS transition on the liquid's height.
+        setPouredContainer('NONE');
+
+        // Step 2: Wait for emptying animation (1s) then start the pour sequence
+        setTimeout(performPour, 1000); // This duration should match the CSS transition
+    } else {
+        // Not switching, just a fresh pour into an empty scene
+        performPour();
+    }
   };
+
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -129,18 +144,18 @@ export const LiquidStation: React.FC = () => {
         if (topLevel < 0) setTopLevel(0);
         if (bottomLevel > 100) setBottomLevel(100);
       } else {
-        // Slowed down interval to 60ms for "drop by drop" feel
+        // Faster interval for a more "flowing" feel
         interval = setInterval(() => {
           setTopLevel((prev) => {
-              const next = prev - 0.25; // Slower drain
+              const next = prev - 1; // Faster drain
               return next < 0 ? 0 : next;
           }); 
           setBottomLevel((prev) => {
-              // Volume Ratio Adjustment (0.25 * 0.75 ratio)
-              const next = prev + 0.1875; 
+              // Volume Ratio Adjustment (1 * 0.75 ratio)
+              const next = prev + 0.75; 
               return next > 100 ? 100 : next;
           });
-        }, 60); 
+        }, 30); // Faster interval
       }
     }
     return () => clearInterval(interval);
@@ -169,7 +184,7 @@ export const LiquidStation: React.FC = () => {
 
   const getSiphonStatus = () => {
     if (warningMsg) return <span className="text-kid-orange animate-pulse flex items-center gap-2"><Info size={20} /> {warningMsg}</span>;
-    if (siphonActive) return `${currentLiquid.name} is dripping! 💧`;
+    if (siphonActive) return `${currentLiquid.name} is flowing! 🌊`;
     if (bottomLevel >= 100) return `The bowl is full! Good job! 🎉`;
     if (topLevel === 0) return `Great job! The ${currentLiquid.name} changed shape! 🎉`;
     return "Ready to flow!";
@@ -216,15 +231,6 @@ export const LiquidStation: React.FC = () => {
         .animate-particle-tumble {
           animation: particle-tumble 4s ease-in-out infinite alternate;
         }
-        @keyframes siphon-drip {
-          0% { transform: translateY(0) scale(0.8); opacity: 0; }
-          20% { opacity: 1; transform: translateY(10px) scale(1); }
-          80% { opacity: 1; transform: translateY(90px) scale(0.9); }
-          100% { opacity: 0; transform: translateY(100px) scale(0.5); }
-        }
-        .animate-siphon-drip {
-          animation: siphon-drip 0.8s linear infinite;
-        }
       `}</style>
 
       {/* Tab Nav */}
@@ -256,6 +262,7 @@ export const LiquidStation: React.FC = () => {
               setSiphonActive(false);
               setPouredContainer('NONE');
               setWarningMsg('');
+              setIsAnimating(false);
             }}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all transform hover:scale-105
@@ -358,7 +365,8 @@ export const LiquidStation: React.FC = () => {
             <div className="flex flex-col items-center group relative z-10 justify-self-center">
               <button 
                 onClick={() => handlePour('TALL')}
-                className={`mb-4 bg-cyan-400 text-slate-900 font-bold px-6 py-2 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] hover:scale-105 hover:shadow-[0_0_25px_rgba(34,211,238,0.8)] transition-all ${isPouring ? 'opacity-50 cursor-not-allowed' : 'animate-pulse'}`}
+                disabled={isAnimating}
+                className={`mb-4 bg-cyan-400 text-slate-900 font-bold px-6 py-2 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] hover:scale-105 hover:shadow-[0_0_25px_rgba(34,211,238,0.8)] transition-all ${isAnimating ? 'opacity-50 cursor-not-allowed' : 'animate-pulse'}`}
               >
                 Pour Here
               </button>
@@ -392,7 +400,8 @@ export const LiquidStation: React.FC = () => {
             <div className="flex flex-col items-center group relative z-10 justify-self-center">
                <button 
                 onClick={() => handlePour('WIDE')}
-                className={`mb-4 bg-cyan-400 text-slate-900 font-bold px-6 py-2 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] hover:scale-105 hover:shadow-[0_0_25px_rgba(34,211,238,0.8)] transition-all ${isPouring ? 'opacity-50 cursor-not-allowed' : 'animate-pulse'}`}
+                disabled={isAnimating}
+                className={`mb-4 bg-cyan-400 text-slate-900 font-bold px-6 py-2 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] hover:scale-105 hover:shadow-[0_0_25px_rgba(34,211,238,0.8)] transition-all ${isAnimating ? 'opacity-50 cursor-not-allowed' : 'animate-pulse'}`}
               >
                 Pour Here
               </button>
@@ -423,7 +432,7 @@ export const LiquidStation: React.FC = () => {
             </div>
           </div>
           
-          {pouredContainer !== 'NONE' && !isPouring && (
+          {pouredContainer !== 'NONE' && !isAnimating && (
             <div className="mt-8 text-xl font-bold text-kid-blue bg-blue-900/40 border border-blue-500/50 px-8 py-4 rounded-full animate-bounce">
               Observation: The {currentLiquid.name} changed shape to fit the {pouredContainer === 'TALL' ? 'Tall Glass' : 'Wide Bowl'}!
             </div>
@@ -537,19 +546,26 @@ export const LiquidStation: React.FC = () => {
                   </g>
                 )}
               </svg>
+              
+              {/* Siphon Stream */}
+              {siphonActive && (
+                  <div 
+                      className="absolute w-4 rounded-b-full z-10"
+                      style={{
+                          left: '350px', // Adjusted for width
+                          top: '180px',
+                          height: '40px', // Fixed height stream into the bowl
+                          backgroundColor: currentLiquid.hexColor,
+                          boxShadow: `0 0 10px ${currentLiquid.hexColor}`
+                      }}
+                  >
+                      {/* Inner shine */}
+                      <div className="w-1 h-full bg-white/50 mx-auto rounded-full animate-pulse"></div>
+                  </div>
+              )}
 
               {/* Bottom Container (Right) - Wide Bowl */}
               <div className="absolute right-8 bottom-8 w-56 h-32 border-4 border-slate-400 border-t-0 bg-white/5 rounded-b-[3rem] overflow-hidden flex flex-col justify-end z-10 backdrop-blur-sm shadow-xl">
-                 {/* Droplets Layer - Inside the bowl but absolutely positioned at tube exit */}
-                 {siphonActive && (
-                    <div className="absolute top-[20px] left-1/2 -translate-x-1/2 z-0">
-                       <div className="w-2 h-2 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '0ms' }}></div>
-                       <div className="w-2.5 h-2.5 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '200ms' }}></div>
-                       <div className="w-2 h-2 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '400ms' }}></div>
-                       <div className="w-2.5 h-2.5 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '600ms' }}></div>
-                    </div>
-                 )}
-
                 <div 
                   className={`w-full transition-all duration-75 relative z-10 ${currentLiquid.fillClass}`}
                   style={{ height: `${bottomLevel}%` }}
@@ -558,6 +574,11 @@ export const LiquidStation: React.FC = () => {
                    {/* Surface Wave Siphon */}
                    <div className={`absolute top-0 w-[200%] h-4 animate-wave rounded-full ${currentLiquid.waveClass}`}></div>
                    {bottomLevel > 10 && <Bubbles />}
+                   
+                   {/* Splash effect */}
+                   {siphonActive && bottomLevel > 1 && (
+                      <div className={`absolute top-0 left-[55%] -translate-x-1/2 w-8 h-4 bg-white/30 blur-sm animate-surface-ripple`}></div>
+                   )}
                 </div>
               </div>
 
