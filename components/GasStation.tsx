@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wind, Info, Check, RotateCcw, Flame, Snowflake, Microscope } from 'lucide-react';
+import { Wind, Info, Check, RotateCcw, Flame, Snowflake, Microscope, ArrowUp, ArrowDown } from 'lucide-react';
 
 type GasType = 'AIR' | 'HELIUM' | 'STEAM';
 
@@ -12,7 +12,6 @@ interface Particle {
 }
 
 // --- Reusable Tooltip Component ---
-// Positioning modified for Gas station cards (inside top)
 const Tooltip = ({ text }: { text: string }) => (
   <div className="absolute top-16 left-1/2 -translate-x-1/2 hidden group-hover:block w-64 bg-slate-900/95 text-white text-xs p-3 rounded-xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-50 text-center animate-fadeIn backdrop-blur-sm pointer-events-none">
     {text}
@@ -25,10 +24,12 @@ const GAS_CONFIG = {
     id: 'AIR',
     name: 'Air',
     emoji: '💨',
-    description: 'Air is a mix of gases. The particles move freely to fill the room.',
+    description: 'Air is a mix of gases. It has weight, so it doesn\'t float away on its own.',
+    weightFact: 'Air is heavier than Helium. That is why an air balloon does not float up!',
     balloonClass: 'bg-blue-500',
+    balloonBehavior: 'translate-y-2', // Hangs down (heavy)
     particleClass: 'bg-slate-400 shadow-[0_0_5px_rgba(148,163,184,0.8)]',
-    baseSpeed: 10, // Slower
+    baseSpeed: 10,
     sourceType: 'INCENSE',
     actionLabel: 'Light Incense',
     fillLabel: 'Pump Air'
@@ -37,10 +38,12 @@ const GAS_CONFIG = {
     id: 'HELIUM',
     name: 'Helium',
     emoji: '🎈',
-    description: 'Helium particles are very light and move around!',
+    description: 'Helium is a very light gas. It loves to go up!',
+    weightFact: 'Helium is lighter than Air! It floats to the top because air pushes it up.',
     balloonClass: 'bg-pink-500',
+    balloonBehavior: '-translate-y-4 animate-float', // Pulls up (light)
     particleClass: 'bg-pink-300 shadow-[0_0_5px_rgba(249,168,212,0.8)]',
-    baseSpeed: 5, // Medium
+    baseSpeed: 5,
     sourceType: 'TANK',
     actionLabel: 'Open Valve',
     fillLabel: 'Fill Helium'
@@ -49,10 +52,12 @@ const GAS_CONFIG = {
     id: 'STEAM',
     name: 'Steam',
     emoji: '♨️',
-    description: 'Steam is hot water gas. The particles have lots of energy and move fast!',
+    description: 'Steam is hot water gas. Hot gas is lighter than cold air.',
+    weightFact: 'Heat makes gas expand and get lighter. That is why steam rises!',
     balloonClass: 'bg-gray-300',
+    balloonBehavior: '-translate-y-1 animate-pulse', // Rises slightly
     particleClass: 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]',
-    baseSpeed: 1.5, // Fast
+    baseSpeed: 1.5,
     sourceType: 'KETTLE',
     actionLabel: 'Boil Water',
     fillLabel: 'Pump Steam'
@@ -65,7 +70,7 @@ export const GasStation: React.FC = () => {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [isFlowing, setIsFlowing] = useState(false);
   const [showObservation, setShowObservation] = useState(false);
-  const [temperature, setTemperature] = useState(1); // 1 = Normal speed
+  const [temperature, setTemperature] = useState(1);
   const [showMicroscope, setShowMicroscope] = useState(false);
 
   const currentGas = GAS_CONFIG[selectedGas];
@@ -93,23 +98,36 @@ export const GasStation: React.FC = () => {
       id: i,
       left: 50, // Start center
       top: 90,  // Start bottom
-      duration: currentGas.baseSpeed + (Math.random() * 2 - 1), // Varies slightly
+      duration: currentGas.baseSpeed + (Math.random() * 2 - 1), 
       delay: Math.random() * 0.5
     }));
     
-    // Set initial state (at source)
     setParticles(newParticles);
 
-    // 2. Trigger expansion to random positions
+    // 2. Trigger expansion based on Gas Type (Simulating Density/Weight)
     setTimeout(() => {
-       const spreadParticles = newParticles.map(p => ({
-         ...p,
-         left: Math.random() * 90 + 5, // 5% to 95%
-         top: Math.random() * 85 + 5   // 5% to 90%
-       }));
+       const spreadParticles = newParticles.map(p => {
+         let targetTop = 0;
+         
+         if (selectedGas === 'HELIUM') {
+            // Helium rises to the ceiling (0% - 30%)
+            targetTop = Math.random() * 30; 
+         } else if (selectedGas === 'STEAM') {
+            // Steam rises but spreads (0% - 60%)
+            targetTop = Math.random() * 60;
+         } else {
+            // Air fills the room evenly/sinks (10% - 90%)
+            targetTop = Math.random() * 80 + 10;
+         }
+
+         return {
+           ...p,
+           left: Math.random() * 90 + 5, 
+           top: targetTop 
+         };
+       });
        setParticles(spreadParticles);
        
-       // Show observation after they spread
        setTimeout(() => setShowObservation(true), 2000);
     }, 100);
   };
@@ -126,7 +144,7 @@ export const GasStation: React.FC = () => {
         case 'TANK':
             return (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
-                    <div className="w-4 h-4 bg-gray-400 rounded-t-md relative top-1"></div> {/* Valve */}
+                    <div className="w-4 h-4 bg-gray-400 rounded-t-md relative top-1"></div>
                     <div className="w-16 h-20 bg-pink-700 rounded-t-3xl border-2 border-pink-900 shadow-inner flex items-center justify-center">
                          <span className="text-pink-200 font-bold text-xs opacity-50">He</span>
                     </div>
@@ -135,11 +153,8 @@ export const GasStation: React.FC = () => {
         case 'KETTLE':
             return (
                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
-                    {/* Spout */}
                     <div className="absolute -left-8 bottom-4 w-8 h-8 border-4 border-slate-300 rounded-tl-xl border-r-0 border-b-0 transform -rotate-12"></div>
-                    {/* Handle */}
                     <div className="absolute -right-6 bottom-6 w-10 h-10 border-4 border-slate-700 rounded-full border-l-0 border-b-0"></div>
-                    {/* Body */}
                     <div className="w-20 h-16 bg-slate-200 rounded-t-full border-b-4 border-slate-300 shadow-md relative z-10"></div>
                 </div>
             );
@@ -175,7 +190,6 @@ export const GasStation: React.FC = () => {
                 <div className="mt-4 bg-slate-900 p-4 rounded-xl border border-slate-700 flex items-center gap-6 animate-fadeIn">
                 <div className="relative w-24 h-24 bg-slate-800 rounded-full border-4 border-slate-600 overflow-hidden flex flex-wrap content-center justify-center p-3 shadow-inner shrink-0">
                     <div className="absolute inset-0 bg-purple-500/10 pointer-events-none rounded-full z-10 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"></div>
-                    {/* Random flying particles */}
                     <div className="relative w-full h-full">
                         {Array.from({length: 5}).map((_, i) => (
                             <div 
@@ -204,7 +218,7 @@ export const GasStation: React.FC = () => {
       </div>
 
       {/* Gas Selector */}
-      <div className="flex gap-4 mb-8 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50">
+      <div className="flex gap-4 mb-4 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50">
         <span className="text-slate-400 font-bold self-center mr-2">Choose Gas:</span>
         {(Object.keys(GAS_CONFIG) as GasType[]).map((type) => (
           <button
@@ -222,8 +236,19 @@ export const GasStation: React.FC = () => {
         ))}
       </div>
 
-       <div className="mb-6 text-center text-slate-300 bg-slate-800/50 px-6 py-2 rounded-full border border-slate-700">
-           {currentGas.description}
+      {/* Gas Facts Panel */}
+       <div className="mb-8 w-full max-w-2xl bg-slate-800/80 p-4 rounded-xl border border-slate-600/50 flex items-start gap-4 transition-all">
+          <div className="p-3 bg-slate-900 rounded-lg">
+             {selectedGas === 'HELIUM' ? <ArrowUp className="text-pink-400" size={24} /> : 
+              selectedGas === 'STEAM' ? <ArrowUp className="text-slate-200" size={24} /> :
+              <ArrowDown className="text-blue-400" size={24} />}
+          </div>
+          <div>
+              <h4 className="text-lg font-bold text-white mb-1">
+                Why {selectedGas === 'AIR' ? 'is Air heavy?' : selectedGas === 'HELIUM' ? 'does Helium float?' : 'does Steam rise?'}
+              </h4>
+              <p className="text-slate-300 text-sm">{currentGas.weightFact}</p>
+          </div>
        </div>
 
       <div className="flex flex-wrap w-full justify-center gap-12">
@@ -232,13 +257,13 @@ export const GasStation: React.FC = () => {
           <Tooltip text="Gas doesn't have a shape. It pushes out to fill the whole balloon!" />
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
           <h3 className="text-xl font-bold text-white mb-4">Activity 1: Fill a Balloon</h3>
-          <div className="h-64 flex items-center justify-center relative w-full border-b border-slate-700/50 mb-4 bg-slate-900/30 rounded-xl">
+          <div className="h-64 flex items-center justify-center relative w-full border-b border-slate-700/50 mb-4 bg-slate-900/30 rounded-xl overflow-hidden">
             {/* The Balloon */}
             <div 
               className={`
-                 ${currentGas.balloonClass} rounded-full transition-all duration-300 shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.2)] 
+                 ${currentGas.balloonClass} rounded-full transition-all duration-1000 ease-in-out shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.2)] 
                  flex items-center justify-center text-white font-bold relative z-10
-                 ${selectedGas === 'HELIUM' && balloonSize > 1.5 ? 'animate-float' : ''}
+                 ${currentGas.balloonBehavior}
               `}
               style={{ 
                 width: `${balloonSize * 30}px`, 
@@ -252,8 +277,12 @@ export const GasStation: React.FC = () => {
               {/* Shine effect */}
               <div className="absolute top-1/4 right-1/4 w-1/4 h-1/4 bg-white/20 rounded-full blur-sm"></div>
               
-              {/* String */}
-              <div className="absolute -bottom-12 w-0.5 h-12 bg-slate-400/50"></div>
+              {/* String - Changes based on gas (Taut if floating up, loose if hanging) */}
+              <div 
+                  className={`absolute -bottom-12 w-0.5 h-12 bg-slate-400/50 transition-transform origin-top duration-500
+                  ${selectedGas === 'HELIUM' ? 'scale-y-100' : 'scale-y-75 rotate-3'}
+                  `}
+               ></div>
             </div>
             
             {/* Pump Nozzle (Visual only) */}
@@ -314,8 +343,12 @@ export const GasStation: React.FC = () => {
 
              {/* Observation Label */}
              {showObservation && (
-                <div className="absolute top-4 w-full text-center text-slate-100 font-bold opacity-0 animate-fadeIn bg-black/40 py-1 backdrop-blur-sm z-30">
-                  The particles spread to fill the room!
+                <div className="absolute top-4 w-full text-center text-slate-100 font-bold opacity-0 animate-fadeIn bg-black/40 py-1 backdrop-blur-sm z-30 flex flex-col items-center">
+                  <span>
+                      {selectedGas === 'HELIUM' ? 'The Helium floats to the top!' : 
+                       selectedGas === 'AIR' ? 'Air fills the room evenly.' : 
+                       'The hot Steam rises up!'}
+                  </span>
                 </div>
              )}
           </div>

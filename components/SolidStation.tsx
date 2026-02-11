@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, Layers, Box, RotateCcw, Check, ArrowDown, Hand, Microscope } from 'lucide-react';
+import { Info, Layers, Box, RotateCcw, Check, ArrowDown, Hand, Microscope, X } from 'lucide-react';
 
 type SolidType = 'WOOD' | 'ICE' | 'BRICK' | 'SPONGE';
 type LocationType = 'SHELF' | 'BOWL' | 'BOX';
@@ -277,6 +277,14 @@ export const SolidStation: React.FC = () => {
         .animate-particle-vibrate {
           animation: particle-vibrate 0.2s linear infinite;
         }
+        @keyframes move-in-arc {
+          0% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(100px, -30px) scale(0.9); }
+          100% { transform: translate(140px, 20px) scale(1); }
+        }
+        .animate-move-in-arc {
+          animation: move-in-arc 3s ease-in-out infinite;
+        }
       `}</style>
 
       {/* Tab Nav */}
@@ -315,6 +323,33 @@ export const SolidStation: React.FC = () => {
                   <br/><span className="text-sm text-slate-400 mt-2 block">Drag the items from the shelf into the bowl or box!</span>
                 </p>
                 
+                {/* Visual Explanation Diagram */}
+                <div className="mt-4 p-4 bg-slate-900/70 rounded-xl border border-slate-700">
+                    <h4 className="text-sm font-bold text-center text-slate-400 mb-2">Watch! The block's shape never changes.</h4>
+                    <svg viewBox="0 0 250 100" className="w-full h-auto">
+                        <defs>
+                            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        {/* Arrow */}
+                        <path d="M 70 50 L 120 50" stroke="#64748b" strokeWidth="2" strokeDasharray="4 2">
+                            <animate attributeName="stroke-dashoffset" from="6" to="0" dur="0.5s" repeatCount="indefinite" />
+                        </path>
+                        <path d="M 115 45 L 125 50 L 115 55" fill="#64748b" />
+                        
+                        {/* Container */}
+                        <path d="M 150 80 Q 185 30 220 80" stroke="#94a3b8" strokeWidth="3" fill="rgba(148, 163, 184, 0.1)" />
+
+                        {/* Animated Block */}
+                        <rect x="25" y="40" width="30" height="30" rx="3" fill="#fb923c" stroke="#9a3412" strokeWidth="1.5" className="animate-move-in-arc" style={{ filter: 'url(#glow)' }} />
+                    </svg>
+                </div>
+
                 <button 
                   onClick={() => setShowMicroscope(!showMicroscope)}
                   className="mt-4 flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-kid-orange font-bold px-4 py-2 rounded-lg text-sm transition-colors border border-slate-600"
@@ -541,6 +576,33 @@ export const SolidStation: React.FC = () => {
                 <p className="text-slate-300">
                   Because solids are hard and hold their shape, we can stack them to build towers!
                 </p>
+                  {/* Stacking Comparison Diagram */}
+                  <div className="mt-4 p-4 bg-slate-900/70 rounded-xl border border-slate-700">
+                      <svg viewBox="0 0 250 120" className="w-full h-auto">
+                          {/* Divider */}
+                          <line x1="125" y1="10" x2="125" y2="110" stroke="#475569" strokeWidth="2" strokeDasharray="4 4" />
+
+                          {/* LEFT: Solids Stack */}
+                          <g>
+                              <rect x="40" y="70" width="50" height="20" rx="2" fill="#fb923c" stroke="#9a3412" strokeWidth="1.5" />
+                              <rect x="40" y="48" width="50" height="20" rx="2" fill="#fb923c" stroke="#9a3412" strokeWidth="1.5" />
+                              <rect x="40" y="26" width="50" height="20" rx="2" fill="#fb923c" stroke="#9a3412" strokeWidth="1.5" />
+                              <text x="65" y="110" textAnchor="middle" fill="#f8fafc" className="text-[10px] font-bold">SOLIDS STACK</text>
+                              {/* Checkmark */}
+                              <circle cx="65" cy="15" r="8" fill="#166534" />
+                              <path d="M 61 15 L 64 18 L 69 12" stroke="#4ade80" strokeWidth="2" fill="none" strokeLinecap="round" />
+                          </g>
+
+                          {/* RIGHT: Liquids Puddle */}
+                          <g>
+                              <path d="M 160 90 C 170 80, 210 80, 220 90 L 210 95 C 200 100, 180 100, 170 95 Z" fill="#38bdf8" stroke="#0ea5e9" strokeWidth="1.5" />
+                              <text x="190" y="110" textAnchor="middle" fill="#f8fafc" className="text-[10px] font-bold">LIQUIDS CAN'T STACK</text>
+                              {/* X Mark */}
+                              <circle cx="190" cy="15" r="8" fill="#991b1b" />
+                              <path d="M 186 11 L 194 19 M 194 11 L 186 19" stroke="#f87171" strokeWidth="2" fill="none" strokeLinecap="round" />
+                          </g>
+                      </svg>
+                  </div>
               </div>
             </div>
           </div>

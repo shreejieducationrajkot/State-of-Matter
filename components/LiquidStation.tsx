@@ -129,17 +129,18 @@ export const LiquidStation: React.FC = () => {
         if (topLevel < 0) setTopLevel(0);
         if (bottomLevel > 100) setBottomLevel(100);
       } else {
+        // Slowed down interval to 60ms for "drop by drop" feel
         interval = setInterval(() => {
           setTopLevel((prev) => {
-              const next = prev - 0.5;
+              const next = prev - 0.25; // Slower drain
               return next < 0 ? 0 : next;
           }); 
           setBottomLevel((prev) => {
-              // Volume Ratio Adjustment:
-              const next = prev + 0.375; // 0.5 * 0.75
+              // Volume Ratio Adjustment (0.25 * 0.75 ratio)
+              const next = prev + 0.1875; 
               return next > 100 ? 100 : next;
           });
-        }, 30); 
+        }, 60); 
       }
     }
     return () => clearInterval(interval);
@@ -168,7 +169,7 @@ export const LiquidStation: React.FC = () => {
 
   const getSiphonStatus = () => {
     if (warningMsg) return <span className="text-kid-orange animate-pulse flex items-center gap-2"><Info size={20} /> {warningMsg}</span>;
-    if (siphonActive) return `${currentLiquid.name} is flowing! 🌊`;
+    if (siphonActive) return `${currentLiquid.name} is dripping! 💧`;
     if (bottomLevel >= 100) return `The bowl is full! Good job! 🎉`;
     if (topLevel === 0) return `Great job! The ${currentLiquid.name} changed shape! 🎉`;
     return "Ready to flow!";
@@ -214,6 +215,15 @@ export const LiquidStation: React.FC = () => {
         }
         .animate-particle-tumble {
           animation: particle-tumble 4s ease-in-out infinite alternate;
+        }
+        @keyframes siphon-drip {
+          0% { transform: translateY(0) scale(0.8); opacity: 0; }
+          20% { opacity: 1; transform: translateY(10px) scale(1); }
+          80% { opacity: 1; transform: translateY(90px) scale(0.9); }
+          100% { opacity: 0; transform: translateY(100px) scale(0.5); }
+        }
+        .animate-siphon-drip {
+          animation: siphon-drip 0.8s linear infinite;
         }
       `}</style>
 
@@ -502,7 +512,7 @@ export const LiquidStation: React.FC = () => {
                   className="transition-all duration-300"
                 />
 
-                {/* Flow Animation - Moving Highlights/Bubbles */}
+                {/* Flow Animation - Moving Highlights/Bubbles - Slower 1s dur */}
                 <path 
                   d="M 80 190 L 80 50 Q 215 -30 356 180" 
                   fill="none" 
@@ -514,7 +524,7 @@ export const LiquidStation: React.FC = () => {
                   strokeOpacity={siphonActive ? 0.6 : 0}
                   className={siphonActive ? "" : "hidden"}
                 >
-                   {siphonActive && <animate attributeName="stroke-dashoffset" from="45" to="0" dur="0.5s" repeatCount="indefinite" />}
+                   {siphonActive && <animate attributeName="stroke-dashoffset" from="45" to="0" dur="1s" repeatCount="indefinite" />}
                 </path>
 
                 {/* Flow Indicator Label */}
@@ -530,8 +540,18 @@ export const LiquidStation: React.FC = () => {
 
               {/* Bottom Container (Right) - Wide Bowl */}
               <div className="absolute right-8 bottom-8 w-56 h-32 border-4 border-slate-400 border-t-0 bg-white/5 rounded-b-[3rem] overflow-hidden flex flex-col justify-end z-10 backdrop-blur-sm shadow-xl">
+                 {/* Droplets Layer - Inside the bowl but absolutely positioned at tube exit */}
+                 {siphonActive && (
+                    <div className="absolute top-[20px] left-1/2 -translate-x-1/2 z-0">
+                       <div className="w-2 h-2 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '0ms' }}></div>
+                       <div className="w-2.5 h-2.5 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '200ms' }}></div>
+                       <div className="w-2 h-2 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '400ms' }}></div>
+                       <div className="w-2.5 h-2.5 rounded-full animate-siphon-drip" style={{ backgroundColor: currentLiquid.hexColor, animationDelay: '600ms' }}></div>
+                    </div>
+                 )}
+
                 <div 
-                  className={`w-full transition-all duration-75 relative ${currentLiquid.fillClass}`}
+                  className={`w-full transition-all duration-75 relative z-10 ${currentLiquid.fillClass}`}
                   style={{ height: `${bottomLevel}%` }}
                 >
                    <span className="absolute top-2 left-4 text-xs font-bold text-blue-900/50 mix-blend-multiply">Wide Bowl</span>
